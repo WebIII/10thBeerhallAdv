@@ -5,6 +5,7 @@ using Beerhall.Tests.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -15,19 +16,32 @@ namespace Beerhall.Tests.Controllers {
         private readonly Cart _cart;
         private readonly DummyApplicationDbContext _context;
         private readonly Mock<IBeerRepository> _beerRepository;
+        private readonly Mock<ILocationRepository> _locationRepository;
+        private readonly Mock<ICustomerRepository> _customerRepository;
+        private readonly Customer _customerJan;
+        private readonly ShippingViewModel _shippingVm;
 
         public CartControllerTest() {
             _context = new DummyApplicationDbContext();
             _beerRepository = new Mock<IBeerRepository>();
             _beerRepository.Setup(b => b.GetAll()).Returns(_context.Beers);
-            var locationRepository = new Mock<ILocationRepository>();
-            locationRepository.Setup(b => b.GetAll()).Returns(_context.Locations);
-            _controller = new CartController(_beerRepository.Object, locationRepository.Object)
+            _locationRepository = new Mock<ILocationRepository>();
+            _locationRepository.Setup(b => b.GetAll()).Returns(_context.Locations);
+            _customerRepository = new Mock<ICustomerRepository>();
+            _customerRepository.Setup(b => b.GetBy("jan@hogent.be")).Returns(_context.CustomerJan);
+            _controller = new CartController(_beerRepository.Object, _locationRepository.Object, _customerRepository.Object) 
             {
                 TempData = new Mock<ITempDataDictionary>().Object
             };
-            _cart = new Cart();
-            _cart.AddLine(_context.Wittekerke, 5); // Beer with BeerId = 2
+            _cart = _context.CartFilled;
+            _customerJan = _context.CustomerJan;
+            _shippingVm = new ShippingViewModel
+            {
+                DeliveryDate = DateTime.Today.AddDays(5).DayOfWeek == DayOfWeek.Sunday ? DateTime.Today.AddDays(6) : DateTime.Today.AddDays(5),
+                Giftwrapping = true,
+                PostalCode = _context.Bavikhove.PostalCode,
+                Street = "Bavikhovestraat"
+            };
         }
 
         #region Index
@@ -93,5 +107,42 @@ namespace Beerhall.Tests.Controllers {
         }
         #endregion
 
+        #region Checkout HttpPost
+        [Fact]
+        public void CheckOut_EmptyCart_RedirectsToIndex() {
+            var actionResult = Assert.IsType<RedirectToActionResult>(_controller.Checkout(_customerJan, new Cart(), _shippingVm));
+            Assert.Equal("Index", actionResult.ActionName);
+        }
+
+        [Fact]
+        public void CheckOut_NoModelErrors_RedirectsToIndexInStoreAndPlacesOrderAndClearsCart() {
+            _locationRepository.Setup(l => l.GetBy(_context.Bavikhove.PostalCode)).Returns(_context.Bavikhove);
+            var actionResult = Assert.IsType<RedirectToActionResult>(_controller.Checkout(_customerJan, _cart, _shippingVm));
+            Assert.Equal("Index", actionResult.ActionName);
+            Assert.Equal("Store", actionResult.ControllerName);
+            Assert.Equal(1, _customerJan.Orders.Count);
+            Assert.Equal(0, _cart.NumberOfItems);
+            _customerRepository.Verify(c => c.SaveChanges(), Times.Once());
+        }
+
+            [Fact]
+        public void CheckOut_ModelErrors_PassesCheckOutViewModelInViewResultModelToDefaultView() {
+            _controller.ModelState.AddModelError("any key", "any error");
+            var actionResult = Assert.IsType<ViewResult>(_controller.Checkout(_customerJan, _cart, _shippingVm));
+            var model = Assert.IsType<CartCheckoutViewModel>(actionResult.Model);
+            Assert.Equal(_shippingVm, model.ShippingViewModel);
+            Assert.Equal(3, model.Locations.Count());
+            Assert.True(string.IsNullOrEmpty(actionResult.ViewName));
+        }
+
+        [Fact]
+        public void CheckOut_DomainOrDataLayerThrowsException_PassesCheckOutViewModelInViewResultModel() {
+            _shippingVm.Street = "";
+            var actionResult = Assert.IsType<ViewResult>(_controller.Checkout(_customerJan, _cart, _shippingVm));
+            var model = Assert.IsType<CartCheckoutViewModel>(actionResult.Model);
+            Assert.Equal(_shippingVm, model.ShippingViewModel);
+            Assert.Equal(3, model.Locations.Count());
+        }
+        #endregion
     }
 }
