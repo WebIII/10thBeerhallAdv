@@ -33,6 +33,7 @@ namespace Beerhall {
             services.AddControllersWithViews()
                 .AddRazorRuntimeCompilation();
             services.AddRazorPages();
+            services.AddSession();
             services.AddScoped<BeerhallDataInitializer>();
             services.AddScoped<IBrewerRepository, BrewerRepository>();
             services.AddScoped<ILocationRepository, LocationRepository>();
@@ -56,6 +57,8 @@ namespace Beerhall {
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseSession();
 
             app.UseAuthentication();
             app.UseAuthorization();
