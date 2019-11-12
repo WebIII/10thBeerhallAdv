@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Beerhall.Models.ViewModels {
     public class CartCheckoutViewModel {
@@ -18,9 +19,16 @@ namespace Beerhall.Models.ViewModels {
     }
 
     public class ShippingViewModel {
+        [DataType(DataType.Date)]
+        [Display(Name = "Delivery date")]
         public DateTime? DeliveryDate { get; set; }
+
+        [Display(Name = "Gift wrapping")]
         public bool Giftwrapping { get; set; }
+
         public string Street { get; set; }
+
+        [Display(Name = "Location")]
         public string PostalCode { get; set; }
     }
 }

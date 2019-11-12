@@ -1,0 +1,53 @@
+﻿@model Beerhall.Models.ViewModels.CartCheckoutViewModel
+@{
+    ViewData["Title"] = "Checkout";
+}
+<h2>Checkout</h2>
+<form asp-action="Checkout">
+    <div class="form-horizontal">
+        <h4>Delivery address</h4>
+        <hr />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="form-group">
+            <label asp-for="ShippingViewModel.Street" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="ShippingViewModel.Street" class="form-control" />
+                <span asp-validation-for="ShippingViewModel.Street" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="ShippingViewModel.PostalCode" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <select asp-for="ShippingViewModel.PostalCode" asp-items="Model.Locations" class="form-control">
+                    <option value="">-- select location --</option>
+                </select>
+                <span asp-validation-for="ShippingViewModel.PostalCode" class="text-danger"></span>
+            </div>
+        </div>
+        <h4>Options</h4>
+        <hr />
+        <div class="form-group">
+            <label asp-for="ShippingViewModel.DeliveryDate" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="ShippingViewModel.DeliveryDate" class="form-control" />
+                <span asp-validation-for="ShippingViewModel.DeliveryDate" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group form-check">
+            <label class="col-md-2 form-check-label">
+                <input class="form-check-input" asp-for="ShippingViewModel.Giftwrapping" />Gift wrapping
+            </label>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Order" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
