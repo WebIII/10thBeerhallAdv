@@ -1,8 +1,9 @@
 ﻿using Beerhall.Filters;
 using Beerhall.Models.Domain;
 using Beerhall.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Beerhall.Controllers {
@@ -55,8 +56,12 @@ namespace Beerhall.Controllers {
             return RedirectToAction("Index");
         }
 
+        [Authorize(Policy = "Customer")]
         public IActionResult Checkout(Cart cart) {
-            throw new NotImplementedException();
+            if (cart.NumberOfItems == 0)
+                return RedirectToAction("Index", "Store");
+            IEnumerable<Location> locations = _locationRepository.GetAll().OrderBy(l => l.Name).ToList();
+            return View(new CartCheckoutViewModel(locations, new ShippingViewModel()));
         }
     }
 }
