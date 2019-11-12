@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Moq;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace Beerhall.Tests.Controllers {
@@ -19,7 +20,9 @@ namespace Beerhall.Tests.Controllers {
             _context = new DummyApplicationDbContext();
             _beerRepository = new Mock<IBeerRepository>();
             _beerRepository.Setup(b => b.GetAll()).Returns(_context.Beers);
-            _controller = new CartController(_beerRepository.Object)
+            var locationRepository = new Mock<ILocationRepository>();
+            locationRepository.Setup(b => b.GetAll()).Returns(_context.Locations);
+            _controller = new CartController(_beerRepository.Object, locationRepository.Object)
             {
                 TempData = new Mock<ITempDataDictionary>().Object
             };
@@ -69,5 +72,26 @@ namespace Beerhall.Tests.Controllers {
             Assert.Equal(0, _cart.NumberOfItems);
         }
         #endregion
+
+        #region Checkout HttpGet
+        [Fact]
+        public void Checkout_EmptyCart_RedirectsToIndexOfStore() {
+            var actionResult = Assert.IsType<RedirectToActionResult>(_controller.Checkout(new Cart()));
+            Assert.Equal("Index", actionResult.ActionName);
+            Assert.Equal("Store", actionResult.ControllerName);
+        }
+
+        [Fact]
+        public void Checkout_NonEmptyCart_PassesACheckOutViewModelInViewResultModel() {
+            var actionResult = Assert.IsType<ViewResult>(_controller.Checkout(_cart));
+            var model = Assert.IsType<CartCheckoutViewModel>(actionResult.Model);
+            Assert.Null(model.ShippingViewModel.DeliveryDate);
+            Assert.Null(model.ShippingViewModel.PostalCode);
+            Assert.Null(model.ShippingViewModel.Street);
+            Assert.False(model.ShippingViewModel.Giftwrapping);
+            Assert.Equal(3, model.Locations.Count());
+        }
+        #endregion
+
     }
 }
