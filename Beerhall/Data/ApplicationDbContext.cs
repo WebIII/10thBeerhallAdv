@@ -8,6 +8,7 @@ namespace Beerhall.Data {
         public DbSet<Brewer> Brewers { get; set; }
         public DbSet<Location> Locations { get; set; }
         public DbSet<Beer> Beers { get; set; }
+        public DbSet<Customer> Customers { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) {
@@ -18,6 +19,9 @@ namespace Beerhall.Data {
             builder.ApplyConfiguration(new BrewerConfiguration());
             builder.ApplyConfiguration(new LocationConfiguration());
             builder.ApplyConfiguration(new BeerConfiguration());
+            builder.ApplyConfiguration(new OrderConfiguration());
+            builder.ApplyConfiguration(new OrderLineConfiguration());
+            builder.ApplyConfiguration(new CustomerConfiguration());
         }
     }
 }
