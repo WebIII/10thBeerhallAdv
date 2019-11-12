@@ -1,5 +1,6 @@
 using Beerhall.Data;
 using Beerhall.Data.Repositories;
+using Beerhall.Filters;
 using Beerhall.Models.Domain;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -34,6 +35,7 @@ namespace Beerhall {
                 .AddRazorRuntimeCompilation();
             services.AddRazorPages();
             services.AddSession();
+            services.AddScoped<CartSessionFilter>();
             services.AddScoped<BeerhallDataInitializer>();
             services.AddScoped<IBrewerRepository, BrewerRepository>();
             services.AddScoped<ILocationRepository, LocationRepository>();
